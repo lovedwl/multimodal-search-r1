@@ -15,6 +15,7 @@
 **MMSearch-R1** is an end-to-end RL framework that enables LMMs to perform on-demand, multi-turn search with real-world multimodal search tools.
 
 ## News
+- [26.04.07] MMSearch-R1 has been accepted to ACL-2026 Main conference!
 - [25.07.30] [MMSearch-R1-7B](https://huggingface.co/lmms-lab/MMSearch-R1-7B) Model and [FactualVQA(FVQA)](https://huggingface.co/datasets/lmms-lab/FVQA) Dataset **(including all cached image search results)** now released on [Huggingface](https://huggingface.co/collections/lmms-lab/mmsearch-r1-6889e975d8651ce2554b1b3e)!
 - [25.06.26] Paper released on [ArXiv](https://arxiv.org/abs/2506.20670) and [Huggingface](https://huggingface.co/papers/2506.20670)!
 - [25.06.18] [Blog](https://www.lmms-lab.com/posts/mmsearch_r1) and code are updated!
