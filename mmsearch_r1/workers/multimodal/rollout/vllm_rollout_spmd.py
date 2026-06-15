@@ -33,6 +33,7 @@ from verl.third_party.vllm import vllm_version
 from verl.utils import hf_processor
 from verl.utils.torch_functional import pad_sequence_to_length
 from verl.workers.rollout.vllm_rollout.vllm_rollout_spmd import (
+    _pre_process_inputs,
     _repeat_interleave,
     vLLMRollout,
 )
@@ -492,14 +493,13 @@ class vLLMRollout_MultiTurn_MMSearch_R1(vLLMRollout):
             # NOTE: We repeat 'multi_modal_data'
             if 'multi_modal_data' in non_tensor_batch.keys():
                 repeated = []
-                _index_br = 0
-                for item in non_tensor_batch['multi_modal_data']:
-                    for _ in range(self.config.n):
+                for i, item in enumerate(non_tensor_batch['multi_modal_data']):
+                    for j in range(self.config.n):
+                        traj_idx = i * self.config.n + j
                         new_item = copy.deepcopy(item)
-                        if search_tool_return_images[_index_br]:
-                            new_item['image'] += search_tool_return_images[_index_br]
+                        if search_tool_return_images[traj_idx]:
+                            new_item['image'] += search_tool_return_images[traj_idx]
                         repeated.append(new_item)
-                        _index_br += 1
                 non_tensor_batch['multi_modal_data'] = np.array(repeated)
             # we also need to repeat 'input_prompt_generation_mask'
             input_prompt_generation_mask = _repeat_interleave(
