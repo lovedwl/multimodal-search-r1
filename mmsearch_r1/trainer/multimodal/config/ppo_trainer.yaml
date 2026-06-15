@@ -117,6 +117,7 @@ actor_rollout_ref:
       parallel_tool_call_threads: 80
 
 critic:
+  enable: false  # GRPO doesn't need critic
   strategy: fsdp
   optim:
     lr: 1e-5
