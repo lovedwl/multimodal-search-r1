@@ -26,19 +26,6 @@ _IMAGE_DISK_CACHE_DIR = os.environ.get(
 _search_cache = None
 
 
-class _SafeUnpickler(pickle.Unpickler):
-    """Unpickler that handles PIL version mismatches gracefully."""
-    def find_class(self, module, name):
-        if 'PIL' in module:
-            class _MockImage:
-                def __setstate__(self, state):
-                    self._state = state
-                def __repr__(self):
-                    return '<PIL.Image placeholder>'
-            return _MockImage
-        return super().find_class(module, name)
-
-
 def _load_search_cache() -> dict:
     """Load and merge train + test image search result caches."""
     global _search_cache
@@ -51,7 +38,7 @@ def _load_search_cache() -> dict:
         if os.path.exists(path):
             try:
                 with open(path, "rb") as f:
-                    data = _SafeUnpickler(f).load()
+                    data = pickle.load(f)
                 _search_cache.update(data)
                 print(f"[Image Search] Loaded search cache from {path}: {len(data)} entries")
             except Exception as e:
@@ -81,7 +68,7 @@ def _download_image(url: str, timeout: int = 10) -> Image.Image | None:
         try:
             return Image.open(cache_path).convert("RGB")
         except Exception:
-            os.remove(cache_path)  # corrupted cache, re-download
+            os.remove(cache_path)
 
     # Download from URL
     try:
@@ -104,7 +91,7 @@ def call_image_search(image_url: str, data_id: str = None):
     download thumbnails (with disk caching), and return in standard format.
 
     Args:
-        image_url: The original image URL (used as fallback if no data_id).
+        image_url: The original image URL.
         data_id: The data_id to look up in the cache.
 
     Returns:
@@ -133,7 +120,9 @@ def call_image_search(image_url: str, data_id: str = None):
     tool_returned_str = "[Image Search Results] The result of the image search consists of web page information related to the image from the user's original question. Each result includes the main image from the web page and its title, ranked in descending order of search relevance, as demonstrated below:\n"
 
     for i, (title, url) in enumerate(zip(titles, image_urls)):
-        img = _download_image(url)
+        img = None
+        if isinstance(url, str) and url.startswith("http"):
+            img = _download_image(url)
         if img is not None:
             tool_returned_images.append(img)
             tool_returned_str += f"{i+1}. image: <|vision_start|><|image_pad|><|vision_end|>\ntitle: {title}\n"
