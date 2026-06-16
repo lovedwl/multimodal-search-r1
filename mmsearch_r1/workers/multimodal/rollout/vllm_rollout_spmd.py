@@ -162,6 +162,10 @@ class vLLMRollout_MultiTurn_MMSearch_R1(vLLMRollout):
         if 'image_urls' in non_tensor_batch.keys() and not prompts.meta_info.get('validate', False):
             non_tensor_batch['image_urls'] = _repeat_interleave(non_tensor_batch['image_urls'], self.config.n)
 
+        # We need 'data_id' for cache-based image search, the shape should be aligned with B*R
+        if 'data_id' in non_tensor_batch.keys() and not prompts.meta_info.get('validate', False):
+            non_tensor_batch['data_id'] = _repeat_interleave(non_tensor_batch['data_id'], self.config.n)
+
         ##### Loop Setting #####
         to_generate = list(range(batch_size * n))  # B*R, all trajs' index
         worker_trajs_count = len(to_generate)
@@ -281,14 +285,17 @@ class vLLMRollout_MultiTurn_MMSearch_R1(vLLMRollout):
                         assert str(i_todo) in id_search_query_mapping.keys()
                         _type = id_search_query_mapping[str(i_todo)]["type"]
                         _content = id_search_query_mapping[str(i_todo)]["content"]
+                        _data_id = non_tensor_batch.get("data_id", [None] * len(vllm_inputs))[i_todo] if "data_id" in non_tensor_batch else None
                         # print(f"[Round #{current_iteration} Search START] Call search tool | Type: {_type} | Content: {_content} ...")
                         if _type == "text":
                             tool_returned_str, tool_stat = call_text_search(
                                 text_query=_content,
+                                data_id=_data_id,
                             )
                         elif _type == "image":
                             tool_returned_str, tool_returned_images, tool_stat = call_image_search(
                                 image_url=_content,
+                                data_id=_data_id,
                             )
                         else:
                             raise ValueError(f"[Round #{current_iteration} Search ERROR] Unknown Search Type: {_type}")
@@ -302,6 +309,7 @@ class vLLMRollout_MultiTurn_MMSearch_R1(vLLMRollout):
                         assert str(i_todo) in id_search_query_mapping.keys()
                         _type = id_search_query_mapping[str(i_todo)]["type"]
                         _content = id_search_query_mapping[str(i_todo)]["content"]
+                        _data_id = non_tensor_batch.get("data_id", [None] * len(vllm_inputs))[i_todo] if "data_id" in non_tensor_batch else None
                         thread_id = threading.current_thread().ident
                         print(
                             f"[Round #{current_iteration} Search START][Thread{thread_id}] Call search tool | Type: {_type} | Content: {_content} ..."
@@ -309,10 +317,12 @@ class vLLMRollout_MultiTurn_MMSearch_R1(vLLMRollout):
                         if _type == "text":
                             tool_returned_str, tool_stat = call_text_search(
                                 text_query=_content,
+                                data_id=_data_id,
                             )
                         elif _type == "image":
                             tool_returned_str, tool_returned_images, tool_stat = call_image_search(
                                 image_url=_content,
+                                data_id=_data_id,
                             )
                         else:
                             raise ValueError(

@@ -55,15 +55,18 @@ def main_task(config, compute_score=None):
 
     # define worker classes
     if config.actor_rollout_ref.actor.strategy == 'fsdp':
+        assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
         from verl.single_controller.ray import RayWorkerGroup
+        from verl.workers.fsdp_workers import CriticWorker
 
         from mmsearch_r1.workers.multimodal.fsdp_workers import ActorRolloutRefWorker
 
         ray_worker_group_cls = RayWorkerGroup
 
     elif config.actor_rollout_ref.actor.strategy == 'megatron':
+        assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
         from verl.single_controller.ray.megatron import NVMegatronRayWorkerGroup
-        from verl.workers.megatron_workers import ActorRolloutRefWorker
+        from verl.workers.megatron_workers import ActorRolloutRefWorker, CriticWorker
 
         ray_worker_group_cls = NVMegatronRayWorkerGroup
 
@@ -72,9 +75,9 @@ def main_task(config, compute_score=None):
 
     from mmsearch_r1.trainer.multimodal.ray_trainer import ResourcePoolManager, Role
 
-    # GRPO doesn't need Critic, so we don't include Role.Critic
     role_worker_mapping = {
         Role.ActorRollout: ray.remote(ActorRolloutRefWorker),
+        Role.Critic: ray.remote(CriticWorker),
         Role.RefPolicy: ray.remote(ActorRolloutRefWorker),
     }
 
@@ -84,6 +87,7 @@ def main_task(config, compute_score=None):
     }
     mapping = {
         Role.ActorRollout: global_pool_id,
+        Role.Critic: global_pool_id,
         Role.RefPolicy: global_pool_id,
     }
 
