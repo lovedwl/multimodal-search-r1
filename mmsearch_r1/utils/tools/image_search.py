@@ -1,8 +1,6 @@
 import os
 import pickle
 import hashlib
-import requests
-from io import BytesIO
 from PIL import Image
 
 
@@ -56,33 +54,15 @@ def _url_to_cache_path(url: str) -> str:
     return os.path.join(_IMAGE_DISK_CACHE_DIR, f"{url_hash}.jpg")
 
 
-def _download_image(url: str, timeout: int = 10) -> Image.Image | None:
-    """
-    Download an image from URL with disk caching.
-    Returns PIL.Image or None on failure.
-    """
+def _load_cached_image(url: str) -> Image.Image | None:
+    """Load image from disk cache. Returns None if not cached."""
     cache_path = _url_to_cache_path(url)
-
-    # Try loading from disk cache first
     if os.path.exists(cache_path):
         try:
             return Image.open(cache_path).convert("RGB")
         except Exception:
-            os.remove(cache_path)
-
-    # Download from URL
-    try:
-        resp = requests.get(url, timeout=timeout, headers={"User-Agent": "Mozilla/5.0"})
-        resp.raise_for_status()
-        img = Image.open(BytesIO(resp.content)).convert("RGB")
-
-        # Save to disk cache
-        os.makedirs(_IMAGE_DISK_CACHE_DIR, exist_ok=True)
-        img.save(cache_path, "JPEG", quality=95)
-        return img
-    except Exception as e:
-        print(f"[Image Search] Failed to download image from {url}: {e}")
-        return None
+            return None
+    return None
 
 
 def call_image_search(image_url: str, data_id: str = None):
@@ -122,7 +102,7 @@ def call_image_search(image_url: str, data_id: str = None):
     for i, (title, url) in enumerate(zip(titles, image_urls)):
         img = None
         if isinstance(url, str) and url.startswith("http"):
-            img = _download_image(url)
+            img = _load_cached_image(url)
         if img is not None:
             tool_returned_images.append(img)
             tool_returned_str += f"{i+1}. image: <|vision_start|><|image_pad|><|vision_end|>\ntitle: {title}\n"
