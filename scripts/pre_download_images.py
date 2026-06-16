@@ -21,6 +21,19 @@ from io import BytesIO
 from PIL import Image
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
+class _SafeUnpickler(pickle.Unpickler):
+    """Handles PIL version mismatch in cached pickle files."""
+    def find_class(self, module, name):
+        if 'PIL' in module:
+            class _MockImage:
+                def __setstate__(self, state):
+                    self._state = state
+                def __repr__(self):
+                    return '<PIL.Image placeholder>'
+            return _MockImage
+        return super().find_class(module, name)
+
 # Paths
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "../data/FVQA")
 TRAIN_CACHE = os.path.join(CACHE_DIR, "fvqa_train_image_search_results_cache.pkl")
@@ -56,7 +69,7 @@ def main():
             print(f"Cache not found: {cache_path}")
             continue
         with open(cache_path, "rb") as f:
-            cache = pickle.load(f)
+            cache = _SafeUnpickler(f).load()
         for entry in cache.values():
             for url in entry.get("tool_returned_images_urls", []):
                 all_urls.add(url)
