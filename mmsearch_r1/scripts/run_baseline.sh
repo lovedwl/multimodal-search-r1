@@ -17,7 +17,7 @@ python3 -m mmsearch_r1.trainer.multimodal.main_ppo \
     algorithm.adv_estimator=grpo \
     data.train_files=$TRAIN_DATA_PATH \
     data.val_files=$VAL_DATA_PATH \
-    data.train_batch_size=8 \
+    data.train_batch_size=24 \
     data.max_prompt_length=4096 \
     data.max_response_length=2048 \
     data.image_key=images \
@@ -34,7 +34,7 @@ python3 -m mmsearch_r1.trainer.multimodal.main_ppo \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=8 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
     actor_rollout_ref.rollout.name=vllm_multiturn_mmsearch \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.15 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.4 \
     actor_rollout_ref.rollout.enable_chunked_prefill=False \
     actor_rollout_ref.rollout.enforce_eager=False \
     actor_rollout_ref.rollout.free_cache_engine=False \
