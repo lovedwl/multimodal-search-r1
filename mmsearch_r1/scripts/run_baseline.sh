@@ -12,6 +12,7 @@ WANDB_EXP_NAME="baseline-qwen2.5-vl-7b"
 N_GPUS=3
 SAVE_DIR="checkpoints/mmsearch-r1/${WANDB_EXP_NAME}"
 
+mkdir -p "$SAVE_DIR"
 python3 -m mmsearch_r1.trainer.multimodal.main_ppo \
     algorithm.adv_estimator=grpo \
     data.train_files=$TRAIN_DATA_PATH \
@@ -60,4 +61,5 @@ python3 -m mmsearch_r1.trainer.multimodal.main_ppo \
     +trainer.val_before_train=True \
     trainer.val_only=True \
     trainer.val_only_save_dir="${SAVE_DIR}/eval_results" \
-    trainer.val_generations_to_log_to_wandb=64
+    trainer.val_generations_to_log_to_wandb=64 \
+    2>&1 | tee "${SAVE_DIR}/eval_results/eval_$(date +%Y%m%d_%H%M%S).log"

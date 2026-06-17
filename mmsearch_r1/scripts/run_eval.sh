@@ -15,6 +15,7 @@ WANDB_EXP_NAME="eval_${EXP_NAME}"
 N_GPUS=3
 SAVE_DIR="${MODEL_PATH}/eval_results"
 
+mkdir -p "$SAVE_DIR"
 python3 -m mmsearch_r1.trainer.multimodal.main_ppo \
     algorithm.adv_estimator=grpo \
     data.val_files=$VAL_DATA_PATH \
@@ -62,4 +63,5 @@ python3 -m mmsearch_r1.trainer.multimodal.main_ppo \
     +trainer.val_before_train=True \
     trainer.val_only=True \
     trainer.val_only_save_dir=$SAVE_DIR \
-    trainer.val_generations_to_log_to_wandb=64
+    trainer.val_generations_to_log_to_wandb=64 \
+    2>&1 | tee "${SAVE_DIR}/eval_$(date +%Y%m%d_%H%M%S).log"

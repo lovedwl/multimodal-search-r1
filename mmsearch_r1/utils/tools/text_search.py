@@ -70,7 +70,7 @@ def _search_bing(query: str, topk: int = 5) -> list[dict]:
     Returns list of dicts: [{"title": ..., "href": ..., "body": ...}, ...]
     """
     try:
-        url = f"https://www.bing.com/search?q={quote_plus(query)}&count={topk}&cc=us&setlang=en"
+        url = f"https://www.bing.com/search?q={quote_plus(query)}&count={topk}&cc=us&setlang=en&mkt=en-US&ensearch=1"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept-Language": "en-US,en;q=0.9",
@@ -91,10 +91,16 @@ def _search_bing(query: str, topk: int = 5) -> list[dict]:
         for i, (href, title_html) in enumerate(h2_links):
             title = re.sub(r'<[^>]+>', '', title_html).strip()
             snippet = ""
+            # Extract actual URL from cite tag
+            real_url = href  # fallback to redirect URL
             if i < len(cites):
                 snippet = re.sub(r'<[^>]+>', '', cites[i]).strip()
-            entry = {"title": title, "href": href, "body": snippet}
-            if any(d in href for d in cn_domains):
+                # cite format: "https://domain.com › path › to › page"
+                cite_url_match = re.match(r'(https?://[^\s›]+)', snippet)
+                if cite_url_match:
+                    real_url = cite_url_match.group(1)
+            entry = {"title": title, "href": real_url, "body": snippet}
+            if any(d in real_url for d in cn_domains):
                 cn_results.append(entry)
             else:
                 en_results.append(entry)
@@ -235,7 +241,7 @@ def call_text_search(text_query: str, data_id: str = None):
     tool_stat = {"success": True, "num_results": len(fetched)}
 
     # Save to cache
-    cache[key] = {"result_str": tool_returned_str, "stat": tool_stat}
+    cache[key] = {"query": text_query, "result_str": tool_returned_str, "stat": tool_stat}
     _save_text_cache()
 
     print(f"[Text Search] Done, {len(fetched)} results returned.")

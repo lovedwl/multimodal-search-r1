@@ -16,6 +16,7 @@ WANDB_EXP_NAME="ablation_A4_rounds_${MAX_ROUNDS}"
 N_GPUS=3
 SAVE_DIR="checkpoints/mmsearch-r1/${WANDB_EXP_NAME}"
 
+mkdir -p "$SAVE_DIR"
 python3 -m mmsearch_r1.trainer.multimodal.main_ppo \
     algorithm.adv_estimator=grpo \
     data.train_files=$TRAIN_DATA_PATH \
@@ -75,4 +76,5 @@ python3 -m mmsearch_r1.trainer.multimodal.main_ppo \
     +trainer.format_penalty=0.1 \
     +trainer.reward_mode="EM" \
     +trainer.val_before_train=True \
-    +algorithm.filter_groups.enable=False
+    +algorithm.filter_groups.enable=False \
+    2>&1 | tee "${SAVE_DIR}/train_$(date +%Y%m%d_%H%M%S).log"

@@ -10,6 +10,7 @@ WANDB_EXP_NAME="sft_tool_classifier"
 N_GPUS=3
 SFT_DATA="/root/autodl-tmp/multimodal-search-r1/data/FVQA/sft_train.parquet"
 
+mkdir -p "checkpoints/mmsearch-r1/${WANDB_EXP_NAME}"
 python3 -m verl.trainer.sft_trainer \
     data.train_files=$SFT_DATA \
     data.messages_key=messages \
@@ -34,4 +35,5 @@ python3 -m verl.trainer.sft_trainer \
     trainer.save_freq=100 \
     trainer.test_freq=-1 \
     trainer.logger=['console','wandb'] \
-    trainer.seed=42
+    trainer.seed=42 \
+    2>&1 | tee "checkpoints/mmsearch-r1/${WANDB_EXP_NAME}/train_$(date +%Y%m%d_%H%M%S).log"

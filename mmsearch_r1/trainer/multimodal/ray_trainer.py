@@ -601,22 +601,19 @@ class RayPPOTrainer:
             if 'image_urls' in test_batch.non_tensor_batch:
                 sample_image_url.extend(list(test_batch.non_tensor_batch['image_urls']))
 
+            # Build non_tensor_batch_keys list, always include data_id if present
+            _nt_keys = ['raw_prompt_ids']
             if 'multi_modal_data' in test_batch.non_tensor_batch.keys():
-                if 'image_urls' in test_batch.non_tensor_batch:
-                    test_gen_batch = test_batch.pop(
-                        batch_keys=['input_ids', 'attention_mask', 'position_ids'],
-                        non_tensor_batch_keys=['raw_prompt_ids', 'multi_modal_data', 'image_urls'],
-                    )
-                else:
-                    test_gen_batch = test_batch.pop(
-                        batch_keys=['input_ids', 'attention_mask', 'position_ids'],
-                        non_tensor_batch_keys=['raw_prompt_ids', 'multi_modal_data'],
-                    )
-            else:
-                test_gen_batch = test_batch.pop(
-                    batch_keys=['input_ids', 'attention_mask', 'position_ids'],
-                    non_tensor_batch_keys=['raw_prompt_ids'],
-                )
+                _nt_keys.append('multi_modal_data')
+            if 'image_urls' in test_batch.non_tensor_batch:
+                _nt_keys.append('image_urls')
+            if 'data_id' in test_batch.non_tensor_batch:
+                _nt_keys.append('data_id')
+
+            test_gen_batch = test_batch.pop(
+                batch_keys=['input_ids', 'attention_mask', 'position_ids'],
+                non_tensor_batch_keys=_nt_keys,
+            )
 
             test_gen_batch.meta_info = {
                 'eos_token_id': self.tokenizer.eos_token_id,
